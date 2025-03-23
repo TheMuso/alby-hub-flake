@@ -103,6 +103,10 @@ in
   inherit options;
 
   config = mkIf cfg.enable {
+    systemd.tmpfiles.rules = [
+      "d '${cfg.workDir}' 0770 ${cfg.user} ${cfg.group} - -"
+    ];
+
     systemd.services.albyhub = rec {
       wantedBy = [ "multi-user.target" ];
       after = [ "network-online.target" ];
