@@ -98,23 +98,6 @@ with lib; let
   };
 
   cfg = config.services.albyHub;
-
-  configFile = builtins.toFile ".env" ''
-    RELAY=${cfg.relay}
-    DATABASE_URI=${cfg.databaseUri}
-    PORT=${toString cfg.port}
-    WORK_DIR=${cfg.workDir}
-    LOG_LEVEL=${toString cfg.logLevel}
-    ${optionalString (cfg.jwtSecret != null) "JWT_SECRET=${cfg.jwtSecret}"}
-    ${optionalString (cfg.autoUnlockPassword != null) "AUTO_UNLOCK_PASSWORD=${cfg.autoUnlockPassword}"}
-
-    ${optionalString (cfg.ldkEsploraServer != null) "LDK_ESPLORA_SERVER=${cfg.ldkEsploraServer}"}
-
-    ${optionalString (cfg.lnd.enable) "LN_BACKEND_TYPE=LND"}
-    ${optionalString (cfg.lnd.address != null) "LND_ADDRESS=${cfg.lnd.address}"}
-    ${optionalString (cfg.lnd.certPath != null) "LND_CERT_FILE=${cfg.lnd.certPath}"}
-    ${optionalString (cfg.lnd.macaroonPath != null) "LND_MACAROON_FILE=${cfg.lnd.macaroonPath}"}
-  '';
 in
 {
   inherit options;
@@ -124,9 +107,20 @@ in
       wantedBy = [ "multi-user.target" ];
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
-      preStart = ''
-        install -o '${cfg.user}' -g '${cfg.group}' -m 640 ${configFile} ${cfg.workDir}/.env
-      '';
+      environment = {
+        RELAY = cfg.relay;
+        DATABASE_URI = cfg.databaseUri;
+        PORT = toString cfg.port;
+        WORK_DIR = cfg.workDir;
+        LOG_LEVEL = toString cfg.logLevel;
+        JWT_SECRET = mkIf (cfg.jwtSecret != null) cfg.jwtSecret;
+        AUTO_UNLOCK_PASSWORD = mkIf (cfg.autoUnlockPassword != null) cfg.autoUnlockPassword;
+        LDK_ESPLORA_SERVER = mkIf (cfg.ldkEsploraServer != null) cfg.ldkEsploraServer;
+        LN_BACKEND_TYPE = mkIf (cfg.lnd.enable) "LND";
+        LND_ADDRESS = mkIf (cfg.lnd.address != null) cfg.lnd.address;
+        LND_CERT_FILE = mkIf (cfg.lnd.certPath != null) cfg.lnd.certPath;
+        LND_MACAROON_FILE = mkIf (cfg.lnd.macaroonPath != null) cfg.lnd.macaroonPath;
+      };
       serviceConfig = {
         Type = "simple";
         User = cfg.user;
@@ -134,7 +128,6 @@ in
         ExecStart = "${cfg.package}/bin/alby-hub";
         Restart = "always";
         RestartSec = "1s";
-        EnvironmentFile = "${cfg.workDir}/.env";
       };
     };
   };
