@@ -98,8 +98,7 @@ with lib; let
   };
 
   cfg = config.services.albyHub;
-in
-{
+in {
   inherit options;
 
   config = mkIf cfg.enable {
@@ -108,9 +107,9 @@ in
     ];
 
     systemd.services.albyhub = rec {
-      wantedBy = [ "multi-user.target" ];
-      after = [ "network-online.target" ];
-      wants = [ "network-online.target" ];
+      wantedBy = ["multi-user.target"];
+      after = ["network-online.target"];
+      wants = ["network-online.target"];
       environment = {
         RELAY = cfg.relay;
         DATABASE_URI = cfg.databaseUri;
